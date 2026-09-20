@@ -1,0 +1,205 @@
+openapi: 3.0.0
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+      summary: 'Liveness probe: answers 200 while the process can serve requests'
+      tags:
+        - health
+  /products:
+    get:
+      operationId: listProducts
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+      summary: List every product
+      tags:
+        - products
+    post:
+      operationId: createProduct
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Validation failed
+      summary: Create a product
+      tags:
+        - products
+  /products/{id}:
+    get:
+      operationId: getProduct
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: id is not a UUID
+        '404':
+          description: No product with that id
+      summary: Get one product
+      tags:
+        - products
+    patch:
+      operationId: updateProduct
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Validation failed, or id is not a UUID
+        '404':
+          description: No product with that id
+      summary: 'Update a product: send only the fields that change'
+      tags:
+        - products
+    delete:
+      operationId: deleteProduct
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: id is not a UUID
+        '404':
+          description: No product with that id
+      summary: Delete a product
+      tags:
+        - products
+info:
+  title: Inventory API
+  description: Create, update, delete and list the products of an inventory.
+  version: 0.0.0
+  contact: {}
+tags: []
+servers: []
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+          enum:
+            - ok
+        uptime:
+          type: number
+          example: 42
+          description: Seconds since the process started
+      required:
+        - status
+        - uptime
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 3f1c2a9e-6b1d-4c55-9a59-0e8d1c1f7a10
+        name:
+          type: string
+          example: Mechanical keyboard
+        description:
+          type: string
+          example: Tenkeyless, brown switches, USB-C
+        price:
+          type: number
+          example: 89.9
+          minimum: 0
+          description: Unit price, at most two decimals
+      required:
+        - id
+        - name
+        - description
+        - price
+    CreateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Mechanical keyboard
+          maxLength: 120
+        description:
+          type: string
+          example: Tenkeyless, brown switches, USB-C
+          maxLength: 1000
+        price:
+          type: number
+          example: 89.9
+          minimum: 0
+          description: Unit price, at most two decimals
+      required:
+        - name
+        - description
+        - price
+    UpdateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Mechanical keyboard
+          maxLength: 120
+        description:
+          type: string
+          example: Tenkeyless, brown switches, USB-C
+          maxLength: 1000
+        price:
+          type: number
+          example: 89.9
+          minimum: 0
+          description: Unit price, at most two decimals

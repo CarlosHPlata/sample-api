@@ -1,0 +1,25 @@
+# Local development: the API with hot reload. Edit files under src/ and the
+# server restarts on its own.
+#
+#   docker compose up --build        → http://localhost:3000/docs
+#   HOST_PORT=3100 docker compose up → when 3000 is taken on your machine
+#
+# The service has no external dependencies yet (products live in memory).
+# When it gains one (a database, a queue), it is declared here next to `api`.
+services:
+  api:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+    volumes:
+      - ./src:/app/src
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
