@@ -14,7 +14,8 @@
     "test": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --coverage",
-    "openapi:generate": "ts-node scripts/generate-openapi.ts"
+    "openapi:generate": "ts-node scripts/generate-openapi.ts",
+    "prepare": "husky"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -49,6 +50,8 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@nestjs/cli": "^12.0.3",
     "@nestjs/schematics": "^12.0.3",
     "@nestjs/testing": "^12.0.3",
@@ -56,6 +59,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.2",
     "@types/supertest": "^7.2.1",
+    "husky": "^9.1.7",
     "jest": "^30.5.2",
     "js-yaml": "^5.4.2",
     "supertest": "^7.2.2",
