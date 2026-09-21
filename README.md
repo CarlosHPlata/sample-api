@@ -50,6 +50,10 @@ src/
     ├── product.entity.ts           the Product shape
     └── dto/                        request bodies and their validation rules
 scripts/generate-openapi.ts     writes openapi.yml from the code
+scripts/bump.sh                 tags and pushes the next release version (see "How to release")
+scripts/changelog.sh            release notes from the commits since the last release
+commitlint.config.mjs           the commit message / PR title rules (see "Commit messages")
+.husky/commit-msg               git hook that checks each commit message
 test/                           tests that boot the whole app in-process
 openapi.yml                     the API contract, committed
 ```
@@ -126,3 +130,61 @@ Every test runs in-process: no database, no network, no Docker needed. There are
 | `test/openapi-contract.spec.ts` | `openapi.yml` still matches the code |
 
 Tests need Node **24.9 or newer**: NestJS 12 is published as ES modules and Jest loads it through Node's `require(esm)` support.
+
+## Commit messages and PR titles
+
+Every commit message and PR title follows [Conventional Commits](https://www.conventionalcommits.org) and ends with the ticket it belongs to:
+
+```
+feat: add stock levels to products (INV-42)
+fix(products): reject negative prices (INV-57)
+feat(api)!: rename price to amount (INV-61)
+```
+
+`type(optional scope)!: description (TICKET)`, where the type is one of `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `style`, `revert`, in lower case; `!` marks a breaking change; the description starts in lower case; the ticket is a key like `INV-42`.
+
+This is checked twice, with the same rules (`commitlint.config.mjs`):
+
+- **on your machine**: `npm ci` installs a git hook (`.husky/commit-msg`) that rejects a commit with a bad message, and tells you why.
+- **on every PR**: the Conventional Commits workflow checks the PR title and each commit in the PR. Hooks can be skipped (`git commit --no-verify`, GitHub's web editor); this check can't.
+
+Why it matters: PRs are squash-merged, so the PR title (or the commit's message, for a one-commit PR) becomes the commit on `main`, and release notes are built from those commits. A message that doesn't follow the format still ends up in the release notes, under "Not following Conventional Commits".
+
+## How to release
+
+A release is a pushed `vX.Y.Z` tag: the Release workflow (`.github/workflows/release.yml`) then publishes a GitHub release with `openapi.yml` attached and release notes built from the commits since the previous release. Don't write tags by hand; from an up-to-date `main`, run:
+
+```bash
+scripts/bump.sh                    # menu: pick the version, then confirm with y
+scripts/bump.sh --minor            # skip the menu, still asks before pushing
+scripts/bump.sh --minor -y         # no questions (scripts, muscle memory)
+scripts/bump.sh --minor --dry-run  # only show the version it would push
+```
+
+| Flag | From `v1.1.1` |
+|---|---|
+| `--major` | `v2.0.0` |
+| `--minor` | `v1.2.0` |
+| `--patch` | `v1.1.2` |
+| `--alpha` | `v1.1.1-alpha` |
+| `--beta` | `v1.1.1-beta` |
+
+The next version is computed from the highest stable tag; alpha and beta tags are ignored.
+
+Before it tags anything, the script checks, and stops at the first failure:
+
+1. you are on `main`
+2. no modified, staged or untracked files
+3. your `main` is the same commit as `origin/main`
+4. CI (`.github/workflows/on_pr.yml`) passed for that commit on GitHub; this needs the [GitHub CLI](https://cli.github.com) logged in (`gh auth login`)
+5. `npm test` passes
+
+It also won't release the same commit twice. To run every check without releasing, answer `n` at the prompt. `scripts/bump.sh --help` lists every option.
+
+To see the release notes the next release would get:
+
+```bash
+scripts/changelog.sh HEAD
+```
+
+They're grouped as breaking changes, features, bug fixes, other changes, and commits not following Conventional Commits.

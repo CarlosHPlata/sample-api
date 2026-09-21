@@ -19,6 +19,9 @@ A small NestJS HTTP service: CRUD over inventory **products** (`id` UUID, `name`
 | Typecheck src + test + scripts | `npx tsc --noEmit -p tsconfig.json` |
 | Regenerate the API contract | `npm run openapi:generate` → `openapi.yml` |
 | Production image | `docker build -t inventory-api .` |
+| Release (tag + push) | `scripts/bump.sh` (menu + confirmation), or `scripts/bump.sh --minor -y`; `--help` for all flags |
+| Preview release notes | `scripts/changelog.sh HEAD` |
+| Check a commit message | `echo "feat: add x (INV-1)" \| npx commitlint` |
 
 Node **24** (`.nvmrc`). Package manager: **npm** only; commit `package-lock.json`.
 
@@ -36,6 +39,10 @@ src/products/
   in-memory-products.repository.ts   ADAPTER bound in products.module.ts
   product.entity.ts, dto/      shapes + class-validator rules
 scripts/generate-openapi.ts    boots the app in-process (no listen) and dumps openapi.yml
+scripts/bump.sh                next vX.Y.Z from git tags → tag HEAD → push (triggers the Release workflow)
+scripts/changelog.sh           release notes (Markdown) from commit subjects since the previous stable tag
+commitlint.config.mjs          commit message / PR title rules, shared by the hook and the PR check
+.husky/commit-msg              runs commitlint on every commit (installed by `npm ci` via "prepare")
 test/                          in-process HTTP tests + the contract test
 ```
 
@@ -66,5 +73,6 @@ Dependency direction: `controller → service → ProductsRepository (port) ← 
 
 ## Conventions
 
-- Branch names and commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`; `!` for a breaking API change).
-- The default branch is `master`.
+- Commit messages and PR titles follow Conventional Commits **and end with a ticket**: `feat: add stock levels (INV-42)`, `fix(products)!: reject negative prices (INV-57)`. Lower-case type and description start; `!` for a breaking API change. Rules live in `commitlint.config.mjs`; the commit-msg hook and `.github/workflows/conventional-commits.yml` (PR title + every PR commit) both enforce them. Branch names follow the same types (`feat/...`, `fix/...`).
+- PRs are squash-merged, so the PR title (or the commit's message, for a one-commit PR) becomes the commit on `main`, and `scripts/changelog.sh` builds release notes from those commits. A bad message is published in the release under "Not following Conventional Commits".
+- The default branch is `main`.

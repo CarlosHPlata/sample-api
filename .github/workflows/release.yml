@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  generates-open-api-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: "checkout code"
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0   # full history and tags: the changelog reads commits since the previous release
+
+    - name: "Build changelog"
+      # No pipe into tee: steps run without pipefail, so a failing script would pass unnoticed.
+      run: |
+        bash scripts/changelog.sh "$GITHUB_REF_NAME" > release-notes.md
+        cat release-notes.md
+
+    - name: "Setup node js"
+      uses: actions/setup-node@v5
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: "Install dependencies"
+      run: npm ci
+
+    - name: "Generate OpenAPI spec"
+      run: APP_VERSION="${GITHUB_REF_NAME#v}" npm run openapi:generate
+
+    - name: "Release openapi def"
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
+      with:
+        body_path: release-notes.md
+        files: openapi.yml
+        fail_on_unmatched_files: true
