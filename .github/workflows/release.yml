@@ -1,0 +1,37 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: "checkout code"
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: "setup node"
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Generate openapi def"
+        run: APP_VERION="${GITHUB_REF_NAME#v}" npm run openapi:generate
+
+      - name: "Release"
+        uses: softprops/action-gh-release@v3
+        with:
+          files: openapi.yml
+          fail_on_unmatched_files: true
+
